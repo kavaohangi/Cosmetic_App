@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-[#F9FAFB] text-gray-900;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .btn-primary {
+        @apply inline-flex items-center justify-center gap-2 bg-[#6366F1] hover:bg-[#4F46E5] text-white font-medium py-2.5 px-4 rounded-lg transition-colors;
+    }
+
+    .btn-danger {
+        @apply inline-flex items-center justify-center gap-2 bg-[#EF4444] hover:bg-red-600 text-white font-medium py-2.5 px-4 rounded-lg transition-colors;
+    }
+
+    .btn-secondary {
+        @apply inline-flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-4 rounded-lg border border-gray-200 transition-colors dark:bg-white/5 dark:hover:bg-white/10 dark:text-gray-200 dark:border-white/10;
+    }
+
+    .card {
+        @apply bg-white border border-gray-200 rounded-xl shadow-sm p-6 dark:bg-[#0F172A] dark:border-white/10;
+    }
+
+    .badge {
+        @apply inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full;
+    }
+
+    .badge-green {
+        @apply bg-green-100 text-green-800;
+    }
+
+    .badge-orange {
+        @apply bg-orange-100 text-orange-800;
+    }
+
+    .badge-red {
+        @apply bg-red-100 text-red-800;
+    }
+
+    .badge-indigo {
+        @apply bg-indigo-100 text-indigo-800;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-3 text-indigo-100/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors;
+    }
+
+    .sidebar-link-active {
+        @apply bg-[#6366F1] text-white rounded-lg px-4 py-2.5;
+    }
+
+    .form-input {
+        @apply w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-[#6366F1] focus:ring-2 focus:ring-[#6366F1]/30 focus:outline-none dark:bg-white/5 dark:border-white/10 dark:text-gray-100 dark:placeholder-gray-500;
+    }
+
+    .form-label {
+        @apply block text-sm font-medium text-gray-700 mb-1.5 dark:text-gray-300;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Dark mode — overrides scopés au contenu (.content-area)
+| Remappe les utilitaires clairs récurrents pour éviter d'éditer chaque vue.
+| La sidebar reste sombre en permanence (hors .content-area).
+|--------------------------------------------------------------------------
+*/
+html.dark .content-area .bg-white { background-color: #0F172A; }
+html.dark .content-area .bg-gray-50 { background-color: rgba(255, 255, 255, 0.03); }
+html.dark .content-area .bg-\[\#F9FAFB\] { background-color: #0B1120; }
+
+html.dark .content-area .border-gray-200 { border-color: rgba(255, 255, 255, 0.08); }
+html.dark .content-area .border-gray-100 { border-color: rgba(255, 255, 255, 0.06); }
+html.dark .content-area .border-gray-300 { border-color: rgba(255, 255, 255, 0.12); }
+
+html.dark .content-area .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+html.dark .content-area .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+html.dark .content-area .text-gray-900 { color: #f1f5f9; }
+html.dark .content-area .text-gray-800 { color: #e2e8f0; }
+html.dark .content-area .text-gray-700 { color: #cbd5e1; }
+html.dark .content-area .text-gray-600 { color: #cbd5e1; }
+html.dark .content-area .text-gray-500 { color: #94a3b8; }
+html.dark .content-area .text-gray-400 { color: #64748b; }
+
+html.dark .content-area .hover\:bg-gray-50:hover { background-color: rgba(255, 255, 255, 0.04); }
