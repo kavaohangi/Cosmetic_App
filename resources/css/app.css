@@ -51,6 +51,10 @@
         @apply bg-indigo-100 text-indigo-800;
     }
 
+    .badge-gray {
+        @apply bg-gray-100 text-gray-700;
+    }
+
     .sidebar-link {
         @apply flex items-center gap-3 text-indigo-100/80 hover:text-white hover:bg-white/5 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors;
     }

@@ -25,6 +25,39 @@ class ReportController extends Controller
     }
 
     /**
+     * Self-evaluation for a Marketeur Terrain: own merchandise sold and total
+     * price, filterable by day / week / month.
+     */
+    public function mine(Request $request): View
+    {
+        $filters = $request->validate([
+            'period' => ['nullable', 'string', 'in:jour,semaine,mois'],
+        ]);
+
+        $user = $request->user();
+        $period = $filters['period'] ?? 'mois';
+
+        [$from, $to] = $this->resolveRange($period, $filters);
+
+        $reports = TerrainReport::query()
+            ->where('user_id', $user->id)
+            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->with(['items.product'])
+            ->latest('date')
+            ->get();
+
+        return view('reports.mine', [
+            'period' => $period,
+            'from' => $from,
+            'to' => $to,
+            'reports' => $reports,
+            'products' => $this->buildTopProducts($reports),
+            'totalCa' => (float) $reports->sum('montant_total'),
+            'totalUnites' => (int) $reports->sum('nb_ventes'),
+        ]);
+    }
+
+    /**
      * Build the full reporting dataset shared by the page and the exports.
      *
      * @return array<string, mixed>
@@ -125,10 +158,10 @@ class ReportController extends Controller
         $esc = fn ($v): string => htmlspecialchars((string) $v, ENT_QUOTES);
         $rows = '';
 
-        $rows .= '<tr><th colspan="3" style="background:#eee">Classement des agents</th></tr>';
-        $rows .= '<tr><th>Agent</th><th>Unités</th><th>CA (FCFA)</th></tr>';
+        $rows .= '<tr><th colspan="4" style="background:#eee">Classement des agents</th></tr>';
+        $rows .= '<tr><th>Agent</th><th>Magasin</th><th>Unités</th><th>Prix total (FCFA)</th></tr>';
         foreach ($data['leaderboard'] as $row) {
-            $rows .= '<tr><td>'.$esc($row['user']?->name ?? '-').'</td><td>'.$row['unites'].'</td><td>'.$row['ca'].'</td></tr>';
+            $rows .= '<tr><td>'.$esc($row['user']?->name ?? '-').'</td><td>'.$esc($row['magasin'] ?? '-').'</td><td>'.$row['unites'].'</td><td>'.$row['ca'].'</td></tr>';
         }
 
         $rows .= '<tr><th colspan="3" style="background:#eee">Produits les plus vendus</th></tr>';
@@ -199,8 +232,11 @@ class ReportController extends Controller
         return $reports
             ->groupBy('user_id')
             ->map(function (Collection $group): array {
+                $user = $group->first()->user;
+
                 return [
-                    'user' => $group->first()->user,
+                    'user' => $user,
+                    'magasin' => $user?->magasin,
                     'ca' => (float) $group->sum('montant_total'),
                     'unites' => (int) $group->sum(fn (TerrainReport $r) => $r->items->sum('quantite')),
                     'reports' => $group->count(),

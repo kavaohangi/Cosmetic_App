@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Models\Product;
 use App\Models\TerrainComplaint;
 use App\Models\User;
@@ -22,10 +21,13 @@ class TerrainComplaintController extends Controller
         Gate::authorize('viewOwn', TerrainComplaint::class);
 
         $user = $request->user();
-        $filters = $request->validate([
+        $filters = array_merge([
+            'type' => null,
+            'status' => null,
+        ], $request->validate([
             'type' => ['nullable', 'in:complaint,proposition'],
             'status' => ['nullable', 'in:pending,reviewed,resolved'],
-        ]);
+        ]));
 
         $query = $user->terrainComplaints();
 
@@ -107,13 +109,19 @@ class TerrainComplaintController extends Controller
         Gate::authorize('viewTeam', TerrainComplaint::class);
 
         $user = $request->user();
-        $filters = $request->validate([
+        $filters = array_merge([
+            'agent_id' => null,
+            'product_id' => null,
+            'type' => null,
+            'status' => null,
+            'period' => null,
+        ], $request->validate([
             'agent_id' => ['nullable', 'integer', 'exists:users,id'],
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'type' => ['nullable', 'in:complaint,proposition'],
             'status' => ['nullable', 'in:pending,reviewed,resolved'],
             'period' => ['nullable', 'in:jour,semaine,mois'],
-        ]);
+        ]));
 
         $query = $this->buildTeamComplaintQuery($user, $filters);
 
@@ -150,7 +158,7 @@ class TerrainComplaintController extends Controller
     /**
      * Build query for team complaints with filters
      *
-     * @param array<string, mixed> $filters
+     * @param  array<string, mixed>  $filters
      */
     private function buildTeamComplaintQuery(User $user, array $filters): Builder
     {
@@ -207,4 +215,3 @@ class TerrainComplaintController extends Controller
         };
     }
 }
-

@@ -6,6 +6,8 @@ enum OrderStatus: string
 {
     case EnAttente = 'en_attente';
     case Validee = 'validee';
+    case Refusee = 'refusee';
+    case PreteALivraison = 'prete_a_livraison';
     case EnPreparation = 'en_preparation';
     case Livree = 'livree';
     case Annulee = 'annulee';
@@ -15,6 +17,8 @@ enum OrderStatus: string
         return match ($this) {
             self::EnAttente => 'En attente',
             self::Validee => 'Validée',
+            self::Refusee => 'Refusée',
+            self::PreteALivraison => 'Prête à livraison',
             self::EnPreparation => 'En préparation',
             self::Livree => 'Livrée',
             self::Annulee => 'Annulée',

@@ -7,6 +7,7 @@ use App\Enums\StockAlertStatus;
 use App\Models\Product;
 use App\Models\StockAlert;
 use App\Models\User;
+use App\Notifications\AlerteRuptureMagasinier;
 use App\Notifications\ProduitDisponible;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -48,6 +49,53 @@ class StockAlertController extends Controller
             'filters' => $filters,
             'statuts' => StockAlertStatus::cases(),
         ]);
+    }
+
+    /**
+     * Form for a Magasinier to manually raise a rupture alert.
+     */
+    public function create(Request $request): View
+    {
+        abort_unless($request->user()->role === Role::Magasinier, 403);
+
+        return view('stock-alerts.create', [
+            'products' => Product::query()->orderBy('name')->get(),
+        ]);
+    }
+
+    /**
+     * Store a Magasinier-raised rupture alert and notify the Chef Marketing.
+     * Raising an alert is optional (not required for every rupture).
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->role === Role::Magasinier, 403);
+
+        $data = $request->validate([
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $alert = StockAlert::create([
+            'product_id' => $data['product_id'],
+            'created_by' => $request->user()->id,
+            'description' => $data['description'] ?? null,
+            'source' => 'magasinier',
+            'statut' => StockAlertStatus::EnAttente,
+        ]);
+
+        $chefs = User::query()
+            ->where('role', Role::ChefMarketing->value)
+            ->where('is_active', true)
+            ->get();
+
+        if ($chefs->isNotEmpty()) {
+            Notification::send($chefs, new AlerteRuptureMagasinier($alert->load('product')));
+        }
+
+        return redirect()
+            ->route('stock-alerts.index')
+            ->with('status', 'Alerte de rupture transmise au Chef Marketing.');
     }
 
     /**

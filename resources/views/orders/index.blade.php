@@ -40,7 +40,12 @@
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ $order->reference }}</td>
                                 <td class="px-6 py-4 text-gray-600">{{ $order->client?->name }}</td>
                                 <td class="px-6 py-4 text-gray-600">{{ $order->user?->name }}</td>
-                                <td class="px-6 py-4"><span class="badge {{ $badge($order->statut) }}">{{ $order->statut->label() }}</span></td>
+                                <td class="px-6 py-4">
+                                    <span class="badge {{ $badge($order->statut) }}">{{ $order->statut->label() }}</span>
+                                    @if ($order->statut === \App\Enums\OrderStatus::Annulee && $order->motif_rejet)
+                                        <span class="block mt-1 text-xs text-red-500" title="{{ $order->motif_rejet }}">Feedback Chef disponible</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ number_format((float) $order->total, 0, ',', ' ') }} FCFA</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $order->date_commande?->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4 text-right">

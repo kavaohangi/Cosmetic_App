@@ -15,6 +15,8 @@ class StockAlert extends Model
         'created_by',
         'quantite_demandee',
         'quantite_disponible',
+        'description',
+        'source',
         'statut',
         'resolved_by',
         'resolved_at',

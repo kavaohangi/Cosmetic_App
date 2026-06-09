@@ -29,17 +29,18 @@
 
     <h2>Classement des agents</h2>
     <table>
-        <thead><tr><th>#</th><th>Agent</th><th class="num">Unités</th><th class="num">CA (FCFA)</th></tr></thead>
+        <thead><tr><th>#</th><th>Agent</th><th>Magasin</th><th class="num">Unités</th><th class="num">Prix total (FCFA)</th></tr></thead>
         <tbody>
         @forelse ($leaderboard as $i => $row)
             <tr>
                 <td>{{ $i + 1 }}</td>
                 <td>{{ $row['user']?->name ?? '—' }}</td>
+                <td>{{ $row['magasin'] ?? '—' }}</td>
                 <td class="num">{{ $row['unites'] }}</td>
                 <td class="num">{{ number_format($row['ca'], 0, ',', ' ') }}</td>
             </tr>
         @empty
-            <tr><td colspan="4">Aucune donnée.</td></tr>
+            <tr><td colspan="5">Aucune donnée.</td></tr>
         @endforelse
         </tbody>
     </table>

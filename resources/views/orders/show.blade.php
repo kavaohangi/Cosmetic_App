@@ -104,6 +104,13 @@
             </div>
         </div>
 
+        @if ($order->statut === \App\Enums\OrderStatus::Annulee && $order->motif_rejet)
+            <div class="card border-l-4 border-red-500 bg-red-50">
+                <p class="text-xs uppercase text-red-400 font-semibold">Feedback du Chef Marketing</p>
+                <p class="mt-1 text-sm text-red-800">{{ $order->motif_rejet }}</p>
+            </div>
+        @endif
+
         <div class="card p-0 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-200"><h2 class="text-base font-semibold text-gray-900">Articles</h2></div>
             <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -129,17 +136,29 @@
         </div>
 
         @if ($order->statut === \App\Enums\OrderStatus::EnAttente)
-            <div class="flex justify-end gap-3">
+            <div class="flex flex-col items-end gap-3" x-data="{ rejecting: false }">
+                <div class="flex justify-end gap-3">
+                    @can('reject', $order)
+                        <button type="button" class="btn-danger" @click="rejecting = !rejecting">Refuser</button>
+                    @endcan
+                    @can('validate', $order)
+                        <form method="POST" action="{{ route('orders.validate', $order) }}">
+                            @csrf @method('PATCH')
+                            <button class="btn-primary">Valider la commande</button>
+                        </form>
+                    @endcan
+                </div>
                 @can('reject', $order)
-                    <form method="POST" action="{{ route('orders.reject', $order) }}">
+                    <form method="POST" action="{{ route('orders.reject', $order) }}" x-show="rejecting" x-cloak class="card w-full max-w-md space-y-3">
                         @csrf @method('PATCH')
-                        <button class="btn-danger">Refuser</button>
-                    </form>
-                @endcan
-                @can('validate', $order)
-                    <form method="POST" action="{{ route('orders.validate', $order) }}">
-                        @csrf @method('PATCH')
-                        <button class="btn-primary">Valider la commande</button>
+                        <div>
+                            <label class="form-label" for="motif_rejet">Motif du refus (transmis à l'agent)</label>
+                            <textarea id="motif_rejet" name="motif_rejet" rows="3" class="form-input" placeholder="Ex : stock insuffisant, prix non validé...">{{ old('motif_rejet') }}</textarea>
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" class="btn-secondary" @click="rejecting = false">Annuler</button>
+                            <button type="submit" class="btn-danger">Confirmer le refus</button>
+                        </div>
                     </form>
                 @endcan
             </div>

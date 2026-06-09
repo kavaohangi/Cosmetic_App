@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Notifications\CommandeSoumise;
 use App\Notifications\CommandeTraitee;
 use App\Notifications\StockInsuffisant;
+use App\Services\InventoryService;
 use App\Services\OrderService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -23,7 +24,10 @@ use Illuminate\Support\Str;
 
 class OrderController extends Controller
 {
-    public function __construct(private OrderService $orderService) {}
+    public function __construct(
+        private OrderService $orderService,
+        private InventoryService $inventoryService,
+    ) {}
 
     public function index(Request $request): View
     {
@@ -56,6 +60,17 @@ class OrderController extends Controller
     {
         $data = $request->validated();
 
+        // Confirmation de rupture au panier : si un produit est indisponible et
+        // que l'agent n'a pas explicitement confirmé, on revient avec la liste.
+        $rupture = $this->orderService->checkAvailabilityForItems($data['items']);
+
+        if ($rupture !== [] && ! $request->boolean('confirm_rupture')) {
+            return back()
+                ->withInput()
+                ->with('rupture_confirmation', $rupture)
+                ->with('warning', 'Certains produits sont en rupture. Confirmez pour soumettre la commande malgré tout.');
+        }
+
         $order = DB::transaction(function () use ($data, $request): Order {
             $order = Order::create([
                 'reference' => 'CMD-'.strtoupper(Str::random(8)),
@@ -87,22 +102,11 @@ class OrderController extends Controller
             return $order;
         });
 
-        // Retirer du panier les produits indisponibles (le système d'alerte reste en place)
-        $manquants = $this->orderService->pruneUnavailableItems($order);
-
-        if ($manquants !== []) {
-            // Tracer les alertes de rupture + notifier les responsables stock
-            $this->orderService->recordStockAlerts($order, $manquants, $request->user()->id);
-            $this->notifyStockManagers($order, $manquants);
-        }
-
-        // Si plus aucun produit disponible, la commande vide est annulée
-        if ($order->items()->count() === 0) {
-            $order->delete();
-
-            return back()
-                ->withInput()
-                ->with('warning', 'Aucun produit disponible : tous les articles sélectionnés sont en rupture. Les responsables stock ont été alertés.');
+        // L'agent ayant confirmé, les produits en rupture restent dans la
+        // commande : on trace les alertes et on prévient la production.
+        if ($rupture !== []) {
+            $this->orderService->recordStockAlerts($order, $rupture, $request->user()->id);
+            $this->notifyStockManagers($order, $rupture);
         }
 
         // Notifier le Chef Marketing (supervisor) de la soumission
@@ -111,12 +115,12 @@ class OrderController extends Controller
             $chef->notify(new CommandeSoumise($order));
         }
 
-        if ($manquants !== []) {
-            $noms = implode(', ', array_column($manquants, 'name'));
+        if ($rupture !== []) {
+            $noms = implode(', ', array_column($rupture, 'name'));
 
             return redirect()
                 ->route('orders.show', $order)
-                ->with('warning', "Commande soumise au Chef Marketing. Produit(s) retiré(s) du panier pour rupture : {$noms}.");
+                ->with('warning', "Commande soumise au Chef Marketing avec produit(s) en rupture (production alertée) : {$noms}.");
         }
 
         return redirect()
@@ -189,17 +193,24 @@ class OrderController extends Controller
             return back()->with('warning', 'Validation impossible : tous les produits sont en rupture. Les responsables ont été alertés.');
         }
 
-        DB::transaction(function () use ($order, $requestUser): void {
-            foreach ($order->items()->with('product')->get() as $item) {
-                $item->product?->decrement('stock', $item->quantite);
-            }
+        // Réserver (bloquer) le stock disponible sans toucher au stock physique.
+        // Le stock physique ne sera déduit qu'à la livraison / bon de sortie.
+        $reserveManquants = $this->inventoryService->reserveForOrder($order, $requestUser?->id);
 
-            $order->update([
-                'statut' => OrderStatus::Validee,
-                'traite_par' => $requestUser?->id,
-                'traite_le' => now(),
-            ]);
-        });
+        if ($reserveManquants !== []) {
+            $this->orderService->recordStockAlerts($order, $reserveManquants, $requestUser?->id);
+            $this->notifyStockManagers($order, $reserveManquants);
+
+            $noms = implode(', ', array_column($reserveManquants, 'name'));
+
+            return back()->with('warning', "Réservation impossible : stock disponible insuffisant pour {$noms}. Les responsables stock ont été alertés.");
+        }
+
+        $order->update([
+            'statut' => OrderStatus::Validee,
+            'traite_par' => $requestUser?->id,
+            'traite_le' => now(),
+        ]);
 
         // Notifier l'agent que sa commande a été validée
         if ($order->user) {
@@ -220,7 +231,7 @@ class OrderController extends Controller
     /**
      * Refuse a pending order.
      */
-    public function rejectOrder(Order $order): RedirectResponse
+    public function rejectOrder(Request $request, Order $order): RedirectResponse
     {
         Gate::authorize('reject', $order);
 
@@ -228,10 +239,18 @@ class OrderController extends Controller
             return back()->with('warning', 'Cette commande a déjà été traitée.');
         }
 
+        $data = $request->validate([
+            'motif_rejet' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        // Au cas où une réservation existait déjà, on la libère.
+        $this->inventoryService->releaseForOrder($order, $request->user()?->id);
+
         $order->update([
             'statut' => OrderStatus::Annulee,
-            'traite_par' => request()->user()?->id,
+            'traite_par' => $request->user()?->id,
             'traite_le' => now(),
+            'motif_rejet' => $data['motif_rejet'] ?? null,
         ]);
 
         // Notifier l'agent que sa commande a été refusée

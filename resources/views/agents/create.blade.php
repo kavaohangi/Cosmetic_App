@@ -26,6 +26,14 @@
                     <label class="form-label" for="phone">Téléphone</label>
                     <input id="phone" type="text" name="phone" value="{{ old('phone') }}" class="form-input">
                 </div>
+                @if ($subordinateRole === \App\Enums\Role::MarketeurTerrain)
+                    <div class="sm:col-span-2">
+                        <label class="form-label" for="magasin">Magasin / Point de vente <span class="text-red-500">*</span></label>
+                        <input id="magasin" type="text" name="magasin" value="{{ old('magasin') }}" class="form-input" placeholder="Ex : Boutique Centre-ville" required>
+                        <p class="mt-1 text-xs text-gray-500">Obligatoire : un Marketeur Terrain doit être associé à un magasin.</p>
+                        @error('magasin')<p class="mt-1 text-xs text-red-500">{{ $message }}</p>@enderror
+                    </div>
+                @endif
                 <div>
                     <label class="form-label" for="password">Mot de passe</label>
                     <input id="password" type="password" name="password" class="form-input" required autocomplete="new-password">

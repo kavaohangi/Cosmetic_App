@@ -83,28 +83,13 @@
             @endif
         </div>
 
-        <form method="POST" action="{{ route('terrain.store') }}" enctype="multipart/form-data" class="space-y-5">
+        <form method="POST" action="{{ route('terrain.store') }}" class="space-y-5">
             @csrf
             <input type="hidden" name="date" value="{{ now()->toDateString() }}">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="form-label" for="nb_ventes">Nombre de ventes</label>
-                    <input id="nb_ventes" type="number" min="0" name="nb_ventes"
-                           value="{{ old('nb_ventes', optional($todayReport)->nb_ventes ?? 0) }}"
-                           class="form-input" required>
-                    <p class="mt-1 text-xs text-gray-500">Nombre total de produits vendus</p>
-                </div>
-
-                <div>
-                    <label class="form-label" for="photo">Photo rayonnage</label>
-                    <input id="photo" type="file" name="photo" accept="image/*"
-                           class="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-600 hover:file:bg-indigo-100">
-                </div>
-            </div>
-
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Marchandises vendues</label>
+                <p class="text-xs text-gray-500 mb-3">Indiquez chaque produit vendu, la quantité et le prix unitaire.</p>
                 <div id="items-container" class="space-y-3">
                     <div class="item-row flex flex-col gap-2 md:flex-row md:gap-2">
                         <select name="items[0][product_id]" required class="flex-1 form-input">

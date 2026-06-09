@@ -42,7 +42,7 @@
                                 <td class="px-6 py-4 font-semibold text-gray-900">{{ $member['user']->name }}</td>
                                 <td class="px-6 py-4 text-[#6366F1]">{{ $member['user']->email }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ $member['orders_count'] }}</td>
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ number_format($member['ca'], 0, ',', ' ') }} FCFA</td>
+                                <td class="px-6 py-4 font-medium text-gray-900">@money((float) $member['ca'])</td>
                                 <td class="px-6 py-4">
                                     @if ($member['user']->is_active)
                                         <span class="badge badge-green">Actif</span>
@@ -52,7 +52,14 @@
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3">
+                                        <a href="{{ route('agents.show', $member['user']) }}" class="text-sm font-medium text-[#6366F1] hover:underline">Voir</a>
                                         @if ($canManageTeam)
+                                            <form method="POST" action="{{ route('agents.toggle-active', $member['user']) }}">
+                                                @csrf @method('PATCH')
+                                                <button class="text-sm font-medium {{ $member['user']->is_active ? 'text-orange-600' : 'text-green-600' }} hover:underline">
+                                                    {{ $member['user']->is_active ? 'Désactiver' : 'Activer' }}
+                                                </button>
+                                            </form>
                                             <form method="POST" action="{{ route('agents.destroy', $member['user']) }}"
                                                   onsubmit="return confirm('Supprimer {{ $member['user']->name }} ? Cette action est irréversible.');">
                                                 @csrf @method('DELETE')

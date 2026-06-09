@@ -18,7 +18,7 @@ class OrderService
      * Check stock availability for every line of the order.
      *
      * @return array<int, array{product_id:int, name:string, demande:int, disponible:int}>
-     *                                                                                  The list of products with insufficient stock (empty when the order is servable).
+     *                                                                                     The list of products with insufficient stock (empty when the order is servable).
      */
     public function checkStock(Order $order): array
     {
@@ -31,12 +31,46 @@ class OrderService
                 continue;
             }
 
-            if ($product->stock < $item->quantite) {
+            if ($product->disponible < $item->quantite) {
                 $manquants[] = [
                     'product_id' => $product->id,
                     'name' => $product->name,
                     'demande' => $item->quantite,
-                    'disponible' => $product->stock,
+                    'disponible' => $product->disponible,
+                ];
+            }
+        }
+
+        return $manquants;
+    }
+
+    /**
+     * Check stock availability for a raw list of requested items, before any
+     * Order is persisted. Used to prompt the agent to confirm a rupture cart.
+     *
+     * @param  array<int, array{product_id:int|string, quantite:int|string}>  $items
+     * @return array<int, array{product_id:int, name:string, demande:int, disponible:int}>
+     */
+    public function checkAvailabilityForItems(array $items): array
+    {
+        $manquants = [];
+
+        $grouped = [];
+        foreach ($items as $line) {
+            $grouped[(int) $line['product_id']] = ($grouped[(int) $line['product_id']] ?? 0) + (int) $line['quantite'];
+        }
+
+        $products = Product::query()->whereIn('id', array_keys($grouped))->get()->keyBy('id');
+
+        foreach ($grouped as $productId => $demande) {
+            $product = $products->get($productId);
+
+            if ($product === null || $product->disponible < $demande) {
+                $manquants[] = [
+                    'product_id' => $productId,
+                    'name' => $product?->name ?? 'Produit inconnu',
+                    'demande' => $demande,
+                    'disponible' => (int) ($product?->disponible ?? 0),
                 ];
             }
         }
@@ -91,17 +125,19 @@ class OrderService
 
             if ($product === null) {
                 $item->delete();
+
                 continue;
             }
 
-            if ($product->stock < $item->quantite) {
+            if ($product->disponible < $item->quantite) {
                 $manquants[] = [
                     'product_id' => $product->id,
                     'name' => $product->name,
                     'demande' => $item->quantite,
-                    'disponible' => $product->stock,
+                    'disponible' => $product->disponible,
                 ];
                 $item->delete();
+
                 continue;
             }
 

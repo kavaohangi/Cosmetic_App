@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Enums\OrderStatus;
 use App\Enums\Role;
 use App\Http\Requests\StoreTerrainReportRequest;
+use App\Models\Client;
 use App\Models\Product;
 use App\Models\TerrainReport;
 use App\Models\User;
 use App\Services\TerrainService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,7 +26,7 @@ class TerrainController extends Controller
     {
         $reports = $request->user()
             ->terrainReports()
-            ->with('supervisor')
+            ->with(['supervisor', 'items'])
             ->latest('date')
             ->paginate(15);
 
@@ -37,6 +39,7 @@ class TerrainController extends Controller
 
         return view('terrain.create', [
             'products' => Product::query()->where('is_active', true)->orderBy('name')->get(),
+            'clients' => Client::query()->orderBy('name')->get(),
         ]);
     }
 
@@ -45,18 +48,11 @@ class TerrainController extends Controller
         $user = $request->user();
         $data = $request->validated();
         $items = $data['items'];
-        unset($data['items']);
-
-        if ($request->hasFile('photo')) {
-            $data['photo_url'] = $request->file('photo')->store('terrain', 'public');
-        }
-        unset($data['photo']);
 
         $report = DB::transaction(function () use ($user, $data, $items): TerrainReport {
             $totalQuantite = 0;
 
             $report = $user->terrainReports()->create([
-                ...$data,
                 'date' => $data['date'] ?? today(),
                 'supervisor_id' => $user->supervisor_id,
                 'nb_ventes' => 0,
@@ -68,13 +64,14 @@ class TerrainController extends Controller
 
                 $report->items()->create([
                     'product_id' => $line['product_id'],
+                    'client_id' => $line['client_id'] ?? null,
                     'quantite' => $line['quantite'],
                     'prix_unitaire' => $line['prix_unitaire'],
                     'sous_total' => $sousTotal,
                 ]);
             }
 
-            $report->update(['nb_ventes' => $data['nb_ventes'] ?? $totalQuantite]);
+            $report->update(['nb_ventes' => $totalQuantite]);
 
             return $report;
         });
@@ -88,7 +85,7 @@ class TerrainController extends Controller
     {
         Gate::authorize('view', $terrain);
 
-        $terrain->load(['user', 'supervisor', 'items.product']);
+        $terrain->load(['user', 'supervisor', 'items.product', 'items.client']);
 
         return view('terrain.show', ['report' => $terrain]);
     }
@@ -109,7 +106,7 @@ class TerrainController extends Controller
             ? User::query()->withRole(Role::AgentMarketeur)
             : $user->terrains();
 
-        /** @var HasMany|\Illuminate\Database\Eloquent\Builder $membersQuery */
+        /** @var HasMany|Builder $membersQuery */
         $members = $membersQuery
             ->orderBy('name')
             ->get()

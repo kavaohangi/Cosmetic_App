@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -29,6 +30,7 @@ class User extends Authenticatable
         'role',
         'supervisor_id',
         'phone',
+        'magasin',
         'avatar',
         'is_active',
     ];
@@ -123,6 +125,30 @@ class User extends Authenticatable
     }
 
     /**
+     * Clients managed by this user as their single Agent Marketeur.
+     */
+    public function managedClients(): HasMany
+    {
+        return $this->hasMany(Client::class, 'agent_id');
+    }
+
+    /**
+     * The client profile linked to this login account (role: client).
+     */
+    public function clientProfile(): HasOne
+    {
+        return $this->hasOne(Client::class, 'user_id');
+    }
+
+    /**
+     * Invoices issued by this user (Agent Marketeur).
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'agent_id');
+    }
+
+    /**
      * Colleagues = users sharing the same supervisor, excluding the user itself.
      *
      * @return Builder<self>
@@ -154,10 +180,10 @@ class User extends Authenticatable
     public function avatarUrl(): string
     {
         if ($this->avatar) {
-            return asset('storage/' . $this->avatar);
+            return asset('storage/'.$this->avatar);
         }
 
-        return 'https://ui-avatars.com/api/?name=' . urlencode($this->name) . '&background=6366F1&color=fff&size=128';
+        return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=6366F1&color=fff&size=128';
     }
 
     /**

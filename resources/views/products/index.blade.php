@@ -3,6 +3,28 @@
         <h1 class="text-2xl font-bold text-gray-900">Catalogue &amp; Stock</h1>
     </x-slot>
     <div class="space-y-6">
+        @if (isset($ruptureCommandes) && $ruptureCommandes->isNotEmpty())
+            <div class="rounded-xl border border-orange-200 bg-orange-50 overflow-hidden">
+                <div class="px-6 py-4 border-b border-orange-200">
+                    <h2 class="text-base font-semibold text-orange-800">En rupture mais commandés</h2>
+                    <p class="text-xs text-orange-700">Produits sous le seuil avec des commandes client en cours — à réapprovisionner en priorité.</p>
+                </div>
+                <div class="divide-y divide-orange-100">
+                    @foreach ($ruptureCommandes as $product)
+                        <div class="flex items-center justify-between px-6 py-3 bg-white/60">
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">{{ $product->name }}</p>
+                                <p class="text-xs text-gray-500">Stock {{ $product->stock }} · {{ $product->commandes_count }} commande(s)</p>
+                            </div>
+                            @can('update', $product)
+                                <a href="{{ route('products.edit', $product) }}" class="btn-secondary !py-1.5 !px-3 text-xs">Ajuster</a>
+                            @endcan
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
         <div class="flex items-center justify-between">
             <p class="text-sm text-gray-500">{{ $products->total() }} produit(s).</p>
             <div class="flex items-center gap-2">
@@ -35,12 +57,15 @@
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ $product->name }}</td>
                                 <td class="px-6 py-4 text-gray-500">{{ $product->sku }}</td>
                                 <td class="px-6 py-4 text-gray-600">{{ $product->category }}</td>
-                                <td class="px-6 py-4 font-medium text-gray-900">{{ number_format((float) $product->price, 0, ',', ' ') }} FCFA</td>
+                                <td class="px-6 py-4 font-medium text-gray-900">@money((float) $product->price)</td>
                                 <td class="px-6 py-4">
                                     @if ($product->estEnRupture())
                                         <span class="badge badge-red">{{ $product->stock }} · rupture</span>
                                     @else
                                         <span class="badge badge-green">{{ $product->stock }}</span>
+                                    @endif
+                                    @if ($product->stock_reserved > 0)
+                                        <span class="badge badge-gray ml-1">{{ $product->stock_reserved }} réservé</span>
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">

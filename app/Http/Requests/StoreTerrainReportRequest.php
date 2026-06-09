@@ -19,10 +19,9 @@ class StoreTerrainReportRequest extends FormRequest
     {
         return [
             'date' => ['nullable', 'date'],
-            'nb_ventes' => ['nullable', 'integer', 'min:0'],
-            'photo' => ['nullable', 'image', 'max:4096'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'items.*.client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'items.*.quantite' => ['required', 'integer', 'min:1'],
             'items.*.prix_unitaire' => ['required', 'numeric', 'min:0'],
         ];

@@ -18,8 +18,8 @@
                 <thead class="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                     <tr>
                         <th class="px-6 py-3">Date</th>
-                        <th class="px-6 py-3">Ventes</th>
-                        <th class="px-6 py-3">Statut</th>
+                        <th class="px-6 py-3">Unités vendues</th>
+                        <th class="px-6 py-3">Prix total</th>
                         <th class="px-6 py-3">Envoyé à</th>
                         <th class="px-6 py-3 text-right">Action</th>
                     </tr>
@@ -29,15 +29,7 @@
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 font-medium text-gray-900">{{ $report->date?->format('d/m/Y') }}</td>
                             <td class="px-6 py-4 text-gray-900">{{ $report->nb_ventes }}</td>
-                            <td class="px-6 py-4">
-                                @if ($report->rupture_stock)
-                                    <span class="badge badge-red">Rupture</span>
-                                @elseif ($report->plaintes_clients)
-                                    <span class="badge badge-orange">Plainte</span>
-                                @else
-                                    <span class="badge badge-green">RAS</span>
-                                @endif
-                            </td>
+                            <td class="px-6 py-4 font-medium text-gray-900">{{ number_format($report->montant_total, 0, ',', ' ') }} FCFA</td>
                             <td class="px-6 py-4 text-gray-600">{{ $report->supervisor?->name ?? '—' }}</td>
                             <td class="px-6 py-4 text-right">
                                 <a href="{{ route('terrain.show', $report) }}" class="text-sm font-medium text-[#6366F1] hover:underline">Voir</a>

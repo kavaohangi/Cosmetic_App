@@ -82,8 +82,9 @@
                         <tr>
                             <th class="px-6 py-3">#</th>
                             <th class="px-6 py-3">Agent</th>
+                            <th class="px-6 py-3">Magasin</th>
                             <th class="px-6 py-3">Unités</th>
-                            <th class="px-6 py-3 text-right">CA</th>
+                            <th class="px-6 py-3 text-right">Prix total</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -91,11 +92,12 @@
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4 font-bold text-gray-400">{{ $i + 1 }}</td>
                                 <td class="px-6 py-4 font-medium text-gray-900">{{ $row['user']?->name ?? '—' }}</td>
+                                <td class="px-6 py-4 text-gray-600">{{ $row['magasin'] ?? '—' }}</td>
                                 <td class="px-6 py-4 text-gray-700">{{ $row['unites'] }}</td>
                                 <td class="px-6 py-4 text-right font-medium text-gray-900">{{ number_format($row['ca'], 0, ',', ' ') }} FCFA</td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="px-6 py-8 text-center text-gray-400">Aucune donnée sur la période.</td></tr>
+                            <tr><td colspan="5" class="px-6 py-8 text-center text-gray-400">Aucune donnée sur la période.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

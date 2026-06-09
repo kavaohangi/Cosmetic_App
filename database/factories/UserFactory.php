@@ -33,6 +33,7 @@ class UserFactory extends Factory
             'role' => Role::MarketeurTerrain,
             'supervisor_id' => null,
             'phone' => fake()->phoneNumber(),
+            'magasin' => fake()->company(),
             'is_active' => true,
             'remember_token' => Str::random(10),
         ];

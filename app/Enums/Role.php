@@ -11,6 +11,7 @@ enum Role: string
     case MarketeurTerrain = 'marketeur_terrain';
     case Commercial = 'commercial';
     case Magasinier = 'magasinier';
+    case Client = 'client';
 
     /**
      * Human readable label for the role.
@@ -25,6 +26,7 @@ enum Role: string
             self::MarketeurTerrain => 'Marketeur Terrain',
             self::Commercial => 'Commercial',
             self::Magasinier => 'Magasinier',
+            self::Client => 'Client',
         };
     }
 

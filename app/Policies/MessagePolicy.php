@@ -25,6 +25,12 @@ class MessagePolicy
                 || ($auth->supervisor_id !== null && $receiver->supervisor_id === $auth->supervisor_id);
         }
 
+        if ($auth->role === Role::Client) {
+            $agentId = $auth->clientProfile?->agent_id;
+
+            return $agentId !== null && $receiver->id === $agentId;
+        }
+
         return true;
     }
 

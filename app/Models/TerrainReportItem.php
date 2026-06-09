@@ -9,6 +9,7 @@ class TerrainReportItem extends Model
 {
     protected $fillable = [
         'terrain_report_id',
+        'client_id',
         'product_id',
         'quantite',
         'prix_unitaire',
@@ -35,5 +36,10 @@ class TerrainReportItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 }

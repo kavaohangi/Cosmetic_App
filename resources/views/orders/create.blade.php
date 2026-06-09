@@ -14,6 +14,18 @@
             <a href="{{ route('orders.index') }}" class="btn-secondary">Retour</a>
         </div>
 
+        @if (session('rupture_confirmation'))
+            <div class="rounded-xl border border-orange-300 bg-orange-50 p-5">
+                <h2 class="text-base font-semibold text-orange-800">Confirmation requise : produits en rupture</h2>
+                <p class="text-sm text-orange-700 mt-1">Les produits suivants sont indisponibles. Vous pouvez soumettre la commande malgré tout : la production sera alertée.</p>
+                <ul class="mt-3 text-sm text-orange-800 list-disc list-inside">
+                    @foreach (session('rupture_confirmation') as $m)
+                        <li>{{ $m['name'] }} — demandé {{ $m['demande'] }}, disponible {{ $m['disponible'] }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form method="POST" action="{{ route('orders.store') }}" class="space-y-6">
             @csrf
 
@@ -47,7 +59,7 @@
                                 <select class="form-input" :name="`items[${index}][product_id]`" x-model.number="line.product_id" required>
                                     <option value="">Sélectionner</option>
                                     <template x-for="p in products" :key="p.id">
-                                        <option :value="p.id" x-text="`${p.name} (${Math.round(p.price).toLocaleString('fr-FR')} FCFA) — stock: ${p.stock}`"></option>
+                                        <option :value="p.id" x-text="`${p.name} ($${p.price.toFixed(2)}) — stock: ${p.stock}`"></option>
                                     </template>
                                 </select>
                             </div>
@@ -55,13 +67,13 @@
                                 <label class="form-label">Quantité</label>
                                 <input type="number" min="1" class="form-input" :name="`items[${index}][quantite]`" x-model.number="line.quantite" required>
                                 <p x-show="line.product_id && line.quantite > stockOf(line.product_id)" x-cloak
-                                   class="mt-1 text-xs text-red-600">
-                                    Stock insuffisant (<span x-text="stockOf(line.product_id)"></span> dispo) — sera retiré du panier.
+                                   class="mt-1 text-xs text-orange-600">
+                                    Stock insuffisant (<span x-text="stockOf(line.product_id)"></span> dispo) — confirmation requise.
                                 </p>
                             </div>
                             <div class="col-span-2">
                                 <label class="form-label">Sous-total</label>
-                                <p class="py-2.5 text-sm font-medium text-gray-900" x-text="Math.round(lineTotal(line)).toLocaleString('fr-FR') + ' FCFA'"></p>
+                                <p class="py-2.5 text-sm font-medium text-gray-900" x-text="'$' + lineTotal(line).toFixed(2)"></p>
                             </div>
                             <div class="col-span-1 text-right">
                                 <button type="button" @click="removeLine(index)" class="text-red-500 hover:text-red-700" x-show="lines.length > 1">
@@ -74,13 +86,18 @@
 
                 <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-6">
                     <span class="text-sm text-gray-500">Total</span>
-                    <span class="text-xl font-bold text-gray-900" x-text="Math.round(total()).toLocaleString('fr-FR') + ' FCFA'"></span>
+                    <span class="text-xl font-bold text-gray-900" x-text="'$' + total().toFixed(2)"></span>
                 </div>
             </div>
 
             <div class="card">
                 <label class="form-label" for="notes">Notes</label>
                 <textarea id="notes" name="notes" rows="2" class="form-input" placeholder="Informations complémentaires...">{{ old('notes') }}</textarea>
+            </div>
+
+            <div class="card flex items-center gap-3">
+                <input type="checkbox" id="confirm_rupture" name="confirm_rupture" value="1" class="rounded border-gray-300" @checked(session('rupture_confirmation'))>
+                <label for="confirm_rupture" class="text-sm text-gray-700">Soumettre même si certains produits sont en rupture (la production sera alertée).</label>
             </div>
 
             <div class="flex justify-end gap-3">

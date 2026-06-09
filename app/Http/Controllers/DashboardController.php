@@ -10,15 +10,20 @@ use App\Models\TerrainReport;
 use App\Models\User;
 use App\Services\TerrainService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     public function __construct(private TerrainService $terrainService) {}
 
-    public function index(Request $request): View
+    public function index(Request $request): View|RedirectResponse
     {
         $user = $request->user();
+
+        if ($user->role === Role::Client) {
+            return redirect()->route('portal.dashboard');
+        }
 
         $data = match ($user->role) {
             Role::ChefMarketing => $this->chefData(),
@@ -146,9 +151,16 @@ class DashboardController extends Controller
         return [
             'kpis' => [
                 'total_produits' => Product::query()->count(),
-                'valeur_stock' => (float) Product::query()->selectRaw('SUM(price * stock) as v')->value('v'),
+                'unites_en_stock' => (int) Product::query()->sum('stock'),
                 'en_rupture' => Product::query()->enRupture()->count(),
             ],
+            // Carousel des produits disponibles + quantités (pas de valeur monétaire).
+            'disponibles' => Product::query()
+                ->where('is_active', true)
+                ->where('stock', '>', 0)
+                ->orderByDesc('stock')
+                ->limit(20)
+                ->get(),
             'alertes' => Product::query()->enRupture()->orderBy('stock')->get(),
         ];
     }

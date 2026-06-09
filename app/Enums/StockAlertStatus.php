@@ -5,12 +5,14 @@ namespace App\Enums;
 enum StockAlertStatus: string
 {
     case EnAttente = 'en_attente';
+    case EnProduction = 'en_production';
     case Resolu = 'resolu';
 
     public function label(): string
     {
         return match ($this) {
-            self::EnAttente => 'En attente',
+            self::EnAttente => 'En attente de production',
+            self::EnProduction => 'En production',
             self::Resolu => 'Résolu',
         };
     }
